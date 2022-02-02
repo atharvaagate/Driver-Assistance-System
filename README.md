@@ -9,8 +9,8 @@ Download the weights file from here : https://drive.google.com/file/d/1s-5RRdXyk
 
 Step 2 :
 Install Dependancies on the local machine using requirements.txt.
-This file may be used to create an environment using:
-$ conda create --name <env> --file <this file>
+#This file may be used to create an environment using:
+#$ conda create --name <env> --file <this file>
   
  Step 3 :
   Run detector.py
