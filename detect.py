@@ -257,7 +257,7 @@ def write(x, results):
 
 videofile = args.videofile #or path to the video file. 
 
-cap = cv2.VideoCapture("video.mp4")  
+cap = cv2.VideoCapture(0)  
 cap.set(cv2.CAP_PROP_FPS, 100)
 fps = int(cap.get(100))
 
