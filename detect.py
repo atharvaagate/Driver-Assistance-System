@@ -13,6 +13,8 @@ from darknet import Darknet
 import argparse
 import torch.nn as nn
 import matplotlib.pyplot as plt
+from Lane import lanePipeline
+#from Lane import findLane
 
 
 
@@ -237,9 +239,10 @@ model.eval()
 def write(x, results):
     c1 = tuple(x[1:3].int())
     c2 = tuple(x[3:5].int())
+    #print(c1,c2,results.shape)
     img = results
     cl = int(x[-1])
-    print(cl)
+    #print(cl)
     color = random.choice(colors)
     try :
         label = "{0}".format(classes[cl])
@@ -257,6 +260,7 @@ def write(x, results):
 
 videofile = args.videofile #or path to the video file. 
 
+#cap = cv2.VideoCapture("Lane Detection/Highway - 10364.mp4")  
 cap = cv2.VideoCapture(0)  
 cap.set(cv2.CAP_PROP_FPS, 100)
 fps = int(cap.get(100))
@@ -267,6 +271,7 @@ assert cap.isOpened(), 'Cannot capture source'
 
 frames = 0  
 start = time.time()
+i = 0
 
 while cap.isOpened():
     ret, frame = cap.read()
@@ -288,7 +293,7 @@ while cap.isOpened():
 
         if type(output) == int:
             frames += 1
-            print("FPS of the video is {:5.4f}".format( frames / (time.time() - start)))
+            #print("FPS of the video is {:5.4f}".format( frames / (time.time() - start)))
             cv2.imshow("frame", frame)
             key = cv2.waitKey(1)
             if key & 0xFF == ord('q'):
@@ -316,15 +321,26 @@ while cap.isOpened():
         classes = load_classes('data/coco.names')
         colors = pkl.load(open("pallete", "rb"))
 
+
+        
+
+#from Lane import lanePipeline
+        frame = lanePipeline(frame,i)        
         list(map(lambda x: write(x, frame), output))
+
+
+
         cv2.imwrite("det.jpg", frame)
+        frame = cv2.resize(frame, (1280,720), interpolation=cv2.INTER_AREA)
         cv2.imshow("frame", frame)
         key = cv2.waitKey(1)
         if key & 0xFF == ord('q'):
             break
         frames += 1
         print(time.time() - start)
-        print("FPS of the video is {:5.2f}".format( frames / (time.time() - start)))
+        #print("FPS of the video is {:5.2f}".format( frames / (time.time() - start)))
+
+        i+=1
     else:
         break     
 

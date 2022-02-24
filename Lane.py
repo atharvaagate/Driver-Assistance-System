@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-from RoiUtils import get_roi
 
 
 def canny(image):
@@ -10,7 +9,6 @@ def canny(image):
     blur = cv2.GaussianBlur(gray, (5,5),0)
     canny = cv2.Canny(blur,50,150) #sobel transform
     return canny
-
 
 
 #imshape = lane_image.shape
@@ -32,8 +30,8 @@ def perspective_transformation(output_first,region_of_interest_pts):
     return warped_image,inv_transformation_matrix
 
 
-
 #here we get the left and right peak of histogram
+
 def histogram_peak_indices(histogram):
     #print(histogram.shape)
     midpoint = np.int(histogram.shape[0]/2)
@@ -42,8 +40,7 @@ def histogram_peak_indices(histogram):
     return leftx,rightx
 
 
-
-def get_line_indices_sliding_windows(warped_image_binary):
+def get_line_indices_sliding_windows(warped_image_binary, histogram):
     frame_sliding_window = warped_image_binary.copy()
     
     #to set height of the sliding window
@@ -146,8 +143,6 @@ def get_line_indices_sliding_windows(warped_image_binary):
     return left_fit, right_fit
 
 
-
-
 def get_lane_line_previous_window(warped_image_binary,left_fit, right_fit):
     
     #to find the nonzero(white) pixels in the frame
@@ -226,8 +221,10 @@ def get_lane_line_previous_window(warped_image_binary,left_fit, right_fit):
 
 
 
-
 def radius_of_curvature_and_distance(ploty,leftx,lefty,rightx,righty):
+    # Pixel parameters for x and y dimensions
+    ymeter_per_pixel = 10.0 / 1000 # meters per pixel in y dimension
+    xmeter_per_pixel = 3.7 / 781 # meters per pixel in x dimension
     
     y_eval = np.max(ploty)
     
@@ -239,7 +236,6 @@ def radius_of_curvature_and_distance(ploty,leftx,lefty,rightx,righty):
     right_curvature = ((1 + (2*right_fit_curve[0]*y_eval*ymeter_per_pixel + right_fit_curve[1])**2)**1.5) / np.absolute(2*right_fit_curve[0])
     
     return left_curvature, right_curvature
-
 
 
 
@@ -308,9 +304,6 @@ def overlay_lane_lines(frame, warped_image_binary,left_fitx,right_fitx,ploty,inv
     return result
 
 
-
-
-
 def display_on_screen(image,left_curvature, right_curvature):
     image_copy = image.copy()
     cv2.putText(image_copy,'Curve Radius: '+str((
@@ -324,133 +317,73 @@ def display_on_screen(image,left_curvature, right_curvature):
 
 
 
+def lanePipeline(frame, i) :
+    global height, width, no_of_windows, margin, minpix, region_of_interest_pts, desired_region_of_interest_pts
+    height = frame.shape[0]
+    width = frame.shape[1]
+    #print(1)
 
+    # Sliding window parameters
+    no_of_windows = 10
+    margin = int((1/12) * width)  # Window width is +/- margin
+    minpix = int((1/24) * width)
+    with open('RoiPoints.npy', 'rb') as f:
+        region_of_interest_pts = np.load(f)
 
+    #region_of_interest_pts = find_roi("Highway - 10364.mp4")
 
+    desired_region_of_interest_pts = np.float32([[0, 0],[0, height],[width, height],[width, 0]])
 
-import cv2
-import numpy as np
-import matplotlib.pyplot as plt
-#from RoiUtils import get_first_frame
-#now we have to do this for each frame in video
-#Highway - 10364.mp4
-
-road_video = cv2.VideoCapture("Lane Detection/Highway - 10364.mp4")
-i=0
-
-#width = frame.shape[1]
-#height = frame.shape[0]
-width = int(road_video.get(cv2.CAP_PROP_FRAME_WIDTH))
-height = int(road_video.get(cv2.CAP_PROP_FRAME_HEIGHT))
-# Sliding window parameters
-no_of_windows = 10
-margin = int((1/12) * width)  # Window width is +/- margin
-minpix = int((1/24) * width)
-
-# Pixel parameters for x and y dimensions
-ymeter_per_pixel = 10.0 / 1000 # meters per pixel in y dimension
-xmeter_per_pixel = 3.7 / 781 # meters per pixel in x dimension
-
-#region_of_interest_pts = find_roi("Highway - 10364.mp4")
-region_of_interest_pts = get_roi()
-
-desired_region_of_interest_pts = np.float32([[0, 0],[0, height],[width, height],[width, 0]])
-
-
-
-
-
-while(road_video.isOpened()):
-    flag = True
-    _,frame = road_video.read() #replace lane_image with frame
-    if _ == True:
-        try :
-            #frame = cv2.resize(frame, (1280,720), interpolation=cv2.INTER_AREA)
+    try :
+        #frame = cv2.resize(frame, (1280,720), interpolation=cv2.INTER_AREA)
         
-        #cv2.imshow("frame", frame)
+    
+        canny_image2 = canny(frame)
+        warped_image, inv_transformation_matrix = perspective_transformation(canny_image2,region_of_interest_pts)
+        #print(2)
+        #warped_image = warped_image[0]
+
+        # Generate the image histogram to serve as a starting point
+        # for finding lane line pixels
+
+        threshold_value,warped_image_binary = cv2.threshold(warped_image, 127, 255, cv2.THRESH_BINARY)
+        #cv2.imshow("frame", warped_image_binary)
+
+
+        histogram = np.sum(warped_image_binary[warped_image_binary.shape[0]//2:,:], axis=0)
+        #print(3)
+
+        # Find lane line pixels using the sliding window method 
+        #print(i)
+        if i == 0:
+            left_fit, right_fit = get_line_indices_sliding_windows(warped_image_binary, histogram)
+        # Fill in the lane line
+        left_fitx,right_fitx,ploty,leftx,lefty,rightx,righty = get_lane_line_previous_window(warped_image_binary,left_fit, right_fit)
+        #print(4)
+        #result1 = result1[:,:]
         
-            '''
-            canny_image = canny(frame)
-            #cro
-            #cropped_image = canny_image
-            cropped_image = region_of_interest(canny_image)
-            lines = cv2.HoughLinesP(cropped_image,2,np.pi/180,100,np.array([]),minLineLength= 40, maxLineGap=5)
-            averaged_lines = average_slope_intercept(frame,lines)
-            line_image = display_lines(frame,averaged_lines)
-            combo_image = cv2.addWeighted(frame, 0.8, line_image , 1,1)
-            cv2.imshow("Frame", combo_image)
-
-
-            
-            #output_first = combo_image.copy()
-            
-            
-            
-
-            # Resize the frame
-
-            # Perform the perspective transform to generate a bird's eye view
-            '''
-            canny_image2 = canny(frame)
-            warped_image, inv_transformation_matrix = perspective_transformation(canny_image2,region_of_interest_pts)
-            #warped_image = warped_image[0]
-
-            # Generate the image histogram to serve as a starting point
-            # for finding lane line pixels
-
-            threshold_value,warped_image_binary = cv2.threshold(warped_image, 127, 255, cv2.THRESH_BINARY)
-            #cv2.imshow("frame", warped_image_binary)
-
-
-            histogram = np.sum(warped_image_binary[warped_image_binary.shape[0]//2:,:], axis=0)
-
-            # Find lane line pixels using the sliding window method 
-            #print(i)
-            if i == 0:
-                left_fit, right_fit = get_line_indices_sliding_windows(warped_image_binary)
-            # Fill in the lane line
-            left_fitx,right_fitx,ploty,leftx,lefty,rightx,righty = get_lane_line_previous_window(warped_image_binary,left_fit, right_fit)
-            #result1 = result1[:,:]
-            
-            #to find radii of curvature
-            left_curvature, right_curvature = radius_of_curvature_and_distance(ploty,leftx,lefty,rightx,righty)
-            
-            # Overlay lines on the original frame
-            result = overlay_lane_lines(frame, warped_image_binary,left_fitx,right_fitx,ploty,inv_transformation_matrix)
-            
-            frame_with_lane_lines = display_on_screen(result,left_curvature, right_curvature)
-
-            # Display the frame 
-            
-            
-            cv2.imshow("Frame", frame_with_lane_lines) 
-            #plt.imshow(frame_with_lane_lines)
-            # Display frame for X milliseconds and check if q key is pressed
-            # q == quit
-            #return frame_with_lane_lines
-            
-            
-        except :
-            
-            cv2.imshow("Frame", frame)
-            print("not found")
-
-        if cv2.waitKey(1) == ord('q'):
-            break
+        #to find radii of curvature
+        left_curvature, right_curvature = radius_of_curvature_and_distance(ploty,leftx,lefty,rightx,righty)
+        #print(5)
         
-    # No more video frames left
-    else:
-        break
-    i+=1
-            
-# Stop when the video is finished
-road_video.release()
+        # Overlay lines on the original frame
+        result = overlay_lane_lines(frame, warped_image_binary,left_fitx,right_fitx,ploty,inv_transformation_matrix)
+        #print(6)
+        
+        frame_with_lane_lines = display_on_screen(result,left_curvature, right_curvature)
 
-# Release the video recording
-road_video.release()
-
-# Close all windows
-cv2.destroyAllWindows()
-print("hi")
-
+        # Display the frame 
+        return frame_with_lane_lines
+        
+        
+        cv2.imshow("Frame", frame_with_lane_lines) 
+        #plt.imshow(frame_with_lane_lines)
+        # Display frame for X milliseconds and check if q key is pressed
+        # q == quit
+        
+        
+    except :
+        return frame
+        cv2.imshow("Frame", frame)
+        print("not found")
 
