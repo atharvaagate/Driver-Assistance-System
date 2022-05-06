@@ -1,0 +1,24 @@
+Gaurav car :
+red = (252,175)
+    green = (0,386)
+    blue = (638,386)
+    white = (420,175)
+
+
+Bugatti :
+ red = (315,140)
+    green = (0,185)
+    blue = (635,185)
+    white = (395,140)
+
+Utah :
+red = (738,404)
+    green = (430,716)
+    blue = (1200,716)
+    white = (950,404)
+
+Cali-road
+red = (320,168)
+    green = (180,286)
+    blue = (517,286)
+    white = (387,168)

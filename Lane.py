@@ -27,6 +27,7 @@ def perspective_transformation(output_first,region_of_interest_pts):
     warped_plot = cv2.polylines(warped_image_copy, [desired_region_of_interest_pts.astype("int32")], True, (255,255,255), 50)
     #cv2.polylines(exp , [region_of_interest_pts] , True , (255,255,255)  , 5)
     #plt.imshow(warped_image)
+    #cv2.imshow("dup", warped_image)
     return warped_image,inv_transformation_matrix
 
 
@@ -263,6 +264,7 @@ def overlay_lane_lines(frame, warped_image_binary,left_fitx,right_fitx,ploty,inv
 
     # Combine the result with the original image
     result = cv2.addWeighted(frame, 1, newwarp, 0.3, 0)
+    #cv2.imshow("mid", result)
     ##########################################
     '''
     # Create the x and y values to plot on the image
@@ -355,8 +357,9 @@ def lanePipeline(frame, i) :
 
         # Find lane line pixels using the sliding window method 
         #print(i)
-        if i == 0:
-            left_fit, right_fit = get_line_indices_sliding_windows(warped_image_binary, histogram)
+        #if i == 0:
+        left_fit, right_fit = get_line_indices_sliding_windows(warped_image_binary, histogram)
+        #    i+=1
         # Fill in the lane line
         left_fitx,right_fitx,ploty,leftx,lefty,rightx,righty = get_lane_line_previous_window(warped_image_binary,left_fit, right_fit)
         #print(4)
@@ -368,6 +371,7 @@ def lanePipeline(frame, i) :
         
         # Overlay lines on the original frame
         result = overlay_lane_lines(frame, warped_image_binary,left_fitx,right_fitx,ploty,inv_transformation_matrix)
+        
         #print(6)
         
         frame_with_lane_lines = display_on_screen(result,left_curvature, right_curvature)

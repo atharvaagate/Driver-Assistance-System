@@ -13,10 +13,15 @@ def get_first_frame(video) :
     
         _,frame = road_video.read() #replace lane_image with frame
         if _ == True:
+            cv2.imshow("frame", frame)
+            key = cv2.waitKey(1)
+            if key & 0xFF == ord('q'):
+                return frame
+                #break
            
             #frame = cv2.resize(frame, (1280,720), interpolation=cv2.INTER_AREA)
             #print(frame)
-            return frame
+            
     
 
 def find_roi(video, plot = False) :
@@ -25,10 +30,38 @@ def find_roi(video, plot = False) :
     height = frame.shape[0]
     width = frame.shape[1]
     exp_image = frame.copy()
-    red = (970,542)
-    green = (0,height)
-    blue = (1792,height)
-    white = (1129,542)
+    #red = (970,542)
+    #green = (0,height)
+    #blue = (1792,height)
+    #white = (1129,542)
+    '''
+    #-----------ANISH CYCLE-------------
+    red = (0, 400)
+    blue = (506,232)
+    green = (120,232)
+    white = (638,400)
+    '''
+
+
+
+    #blue = (350,36)
+    #green = (277,36)
+    #red = (0,111)
+    #white = (635,111)
+
+
+    #Gauraav Car
+    #red = (252,175)
+    #green = (0,386)
+    #blue = (638,386)
+    #white = (420,175)
+
+
+    red = (252,175)
+    green = (0,386)
+    blue = (638,386)
+    white = (420,175)
+
     cv2.circle(exp_image, red, radius=5, color=(255, 0, 0), thickness=10)     ##RED
     #cv2.circle(exp_image, (10,530), radius=5, color=(0, 0, 255), thickness=10)     
 
@@ -73,8 +106,9 @@ def find_roi(video, plot = False) :
 
 
 #if __name__ == "__main__" :
+#'http://192.168.214.244:8081/'
 
-region_of_interest_pts = find_roi(0)
+region_of_interest_pts = find_roi("http://192.168.50.244:8081/")
 print(region_of_interest_pts)
 
 with open('RoiPoints.npy', 'wb') as f:
